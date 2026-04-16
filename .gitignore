@@ -7,6 +7,8 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
 .DS_Store
 /build
 /captures
@@ -15,3 +17,14 @@
 local.properties
 /tmp
 /.kotlin
+
+/.env*
+
+/.direnv
+/.envrc
+.devenv*
+devenv.local.nix
+
+.claude/settings.local.json
+
+worktrees
