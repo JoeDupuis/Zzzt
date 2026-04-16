@@ -71,7 +71,10 @@ fun LibraryScreen(onAddClick: () -> Unit, onClipClick: (String) -> Unit) {
                 items(clips, key = { it.id }) { clip ->
                     ClipCard(
                         clip = clip,
-                        onTap = { onClipClick(clip.id) },
+                        onTap = {
+                            container.playerController.prepareClip(clip)
+                            onClipClick(clip.id)
+                        },
                         onLongPress = { pendingDelete = clip },
                     )
                 }

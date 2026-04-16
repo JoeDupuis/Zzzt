@@ -1,6 +1,5 @@
 package io.dupuis.zzzt.ui.player
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,12 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
-    appContext: Context,
+    private val controller: PlayerController,
     private val repository: ClipRepository,
     private val clipId: String,
 ) : ViewModel() {
-
-    private val controller = PlayerController(appContext)
 
     private val _clip = MutableStateFlow<Clip?>(null)
     val clip: StateFlow<Clip?> = _clip.asStateFlow()
@@ -27,19 +24,19 @@ class PlayerViewModel(
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    private val listener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
+        }
+    }
+
     init {
+        controller.addListener(listener)
         viewModelScope.launch {
             val loaded = repository.getById(clipId)
             _clip.value = loaded
             if (loaded != null) {
-                controller.connect { mc ->
-                    mc.addListener(object : Player.Listener {
-                        override fun onIsPlayingChanged(isPlaying: Boolean) {
-                            _isPlaying.value = isPlaying
-                        }
-                    })
-                    controller.playClip(loaded)
-                }
+                controller.playClip(loaded)
             }
         }
     }
@@ -49,19 +46,19 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
-        controller.release()
+        controller.removeListener(listener)
         super.onCleared()
     }
 
     companion object {
         fun factory(
-            appContext: Context,
+            controller: PlayerController,
             repository: ClipRepository,
             clipId: String,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                PlayerViewModel(appContext, repository, clipId) as T
+                PlayerViewModel(controller, repository, clipId) as T
         }
     }
 }

@@ -7,42 +7,67 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import io.dupuis.zzzt.data.repository.Clip
 import java.io.File
 
 class PlayerController(context: Context) {
     private val appContext = context.applicationContext
-    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private val controllerFuture = MediaController.Builder(
+        appContext,
+        SessionToken(appContext, ComponentName(appContext, PlaybackService::class.java)),
+    ).buildAsync()
     private var controller: MediaController? = null
+    private var preparedClipId: String? = null
 
-    fun connect(onReady: (MediaController) -> Unit) {
-        val token = SessionToken(appContext, ComponentName(appContext, PlaybackService::class.java))
-        val future = MediaController.Builder(appContext, token).buildAsync()
-        controllerFuture = future
-        future.addListener({
-            val mc = future.get()
-            controller = mc
-            onReady(mc)
+    init {
+        controllerFuture.addListener({
+            controller = controllerFuture.get()
         }, MoreExecutors.directExecutor())
     }
 
-    fun playClip(clip: Clip) {
-        val mc = controller ?: return
-        val item = MediaItem.Builder()
-            .setUri(Uri.fromFile(File(clip.audioPath)))
-            .setClippingConfiguration(
-                MediaItem.ClippingConfiguration.Builder()
-                    .setStartPositionMs(clip.trimStartMs)
-                    .setEndPositionMs(clip.trimEndMs)
-                    .build(),
-            )
-            .build()
-        mc.setMediaItem(item)
+    private fun withController(action: (MediaController) -> Unit) {
+        val mc = controller
+        if (mc != null) {
+            action(mc)
+        } else {
+            controllerFuture.addListener({
+                action(controllerFuture.get())
+            }, MoreExecutors.directExecutor())
+        }
+    }
+
+    fun addListener(listener: Player.Listener) = withController { it.addListener(listener) }
+
+    fun removeListener(listener: Player.Listener) = withController { it.removeListener(listener) }
+
+    fun prepareClip(clip: Clip) = withController { mc ->
+        doSetup(mc, clip)
+        preparedClipId = clip.id
+    }
+
+    fun playClip(clip: Clip) = withController { mc ->
+        if (preparedClipId != clip.id) {
+            doSetup(mc, clip)
+        }
+        mc.play()
+        preparedClipId = null
+    }
+
+    private fun doSetup(mc: MediaController, clip: Clip) {
+        mc.setMediaItem(
+            MediaItem.Builder()
+                .setUri(Uri.fromFile(File(clip.audioPath)))
+                .setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(clip.trimStartMs)
+                        .setEndPositionMs(clip.trimEndMs)
+                        .build(),
+                )
+                .build(),
+        )
         mc.repeatMode = Player.REPEAT_MODE_ONE
         mc.prepare()
-        mc.play()
     }
 
     fun pause() {
@@ -55,7 +80,6 @@ class PlayerController(context: Context) {
 
     fun release() {
         controller = null
-        controllerFuture?.let { MediaController.releaseFuture(it) }
-        controllerFuture = null
+        MediaController.releaseFuture(controllerFuture)
     }
 }

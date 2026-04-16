@@ -64,7 +64,7 @@ fun PlayerScreen(clipId: String, onBack: () -> Unit) {
     val container = (context.applicationContext as ZzztApp).container
     val viewModel: PlayerViewModel = viewModel(
         factory = PlayerViewModel.factory(
-            appContext = context.applicationContext,
+            controller = container.playerController,
             repository = container.clipRepository,
             clipId = clipId,
         ),

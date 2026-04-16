@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import io.dupuis.zzzt.data.db.AppDatabase
 import io.dupuis.zzzt.data.repository.ClipRepository
+import io.dupuis.zzzt.player.PlayerController
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +37,8 @@ class AppContainer(context: Context) {
         clipsDir = clipsDir,
         thumbsDir = thumbsDir,
     )
+
+    val playerController: PlayerController = PlayerController(context.applicationContext)
 
     val pendingClips: MutableMap<String, PendingClip> = ConcurrentHashMap()
 }
