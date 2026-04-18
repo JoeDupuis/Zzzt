@@ -31,6 +31,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -127,19 +131,33 @@ fun PlayerScreen(clipId: String, onBack: () -> Unit) {
                     onClick = { viewModel.togglePlayPause() },
                     modifier = Modifier.size(72.dp),
                 ) {
-                    if (isPlaying) {
-                        Text(
-                            text = "⏸",
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = "Play",
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isPlaying) PauseIcon else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                    )
                 }
             }
         }
     }
 }
+
+private val PauseIcon: ImageVector = ImageVector.Builder(
+    name = "Pause",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(fill = SolidColor(Color.Black)) {
+        moveTo(6f, 5f)
+        horizontalLineToRelative(4f)
+        verticalLineToRelative(14f)
+        horizontalLineToRelative(-4f)
+        close()
+        moveTo(14f, 5f)
+        horizontalLineToRelative(4f)
+        verticalLineToRelative(14f)
+        horizontalLineToRelative(-4f)
+        close()
+    }
+}.build()
