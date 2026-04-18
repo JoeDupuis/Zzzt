@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -102,29 +103,36 @@ fun TrimScreen(clipId: String, onSaved: () -> Unit, onBack: () -> Unit) {
         },
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::onNameChange,
                 label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 singleLine = true,
             )
 
             val range = state.trimStartMs.toFloat()..state.trimEndMs.toFloat()
-            RangeSlider(
-                value = range,
-                onValueChange = { v -> viewModel.onTrimChange(v.start.toLong(), v.endInclusive.toLong()) },
-                valueRange = 0f..pending.durationMs.toFloat(),
-            )
+            Box(modifier = Modifier.fillMaxWidth().systemGestureExclusion()) {
+                RangeSlider(
+                    value = range,
+                    onValueChange = { v -> viewModel.onTrimChange(v.start.toLong(), v.endInclusive.toLong()) },
+                    valueRange = 0f..pending.durationMs.toFloat(),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
             Text(
                 "${formatMs(state.trimStartMs)} – ${formatMs(state.trimEndMs)}",
                 style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(onClick = {
                     exoPlayer.seekTo(state.trimStartMs)
                     exoPlayer.play()
@@ -136,7 +144,7 @@ fun TrimScreen(clipId: String, onSaved: () -> Unit, onBack: () -> Unit) {
 
             Button(
                 onClick = { viewModel.save() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 enabled = state.name.isNotBlank() && state.trimEndMs > state.trimStartMs,
             ) { Text("Save") }
         }
