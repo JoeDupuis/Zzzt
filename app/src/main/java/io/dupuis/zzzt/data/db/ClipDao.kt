@@ -16,6 +16,12 @@ interface ClipDao {
     @Query("SELECT * FROM clips WHERE id = :id LIMIT 1")
     fun getById(id: String): ClipEntity?
 
+    @Query("SELECT * FROM clips WHERE lastPlayedAt IS NOT NULL ORDER BY lastPlayedAt DESC LIMIT 1")
+    fun observeMostRecentlyPlayed(): Flow<ClipEntity?>
+
+    @Query("UPDATE clips SET lastPlayedAt = :at WHERE id = :id")
+    fun markPlayed(id: String, at: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(clip: ClipEntity)
 

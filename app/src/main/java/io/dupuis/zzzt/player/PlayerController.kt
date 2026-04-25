@@ -10,8 +10,14 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import io.dupuis.zzzt.data.repository.Clip
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-class PlayerController(context: Context) {
+class PlayerController(
+    context: Context,
+    private val onPlaybackStart: (clipId: String) -> Unit = {},
+) {
     private val appContext = context.applicationContext
     private val controllerFuture = MediaController.Builder(
         appContext,
@@ -20,9 +26,22 @@ class PlayerController(context: Context) {
     private var controller: MediaController? = null
     private var preparedClipId: String? = null
 
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _currentClipId = MutableStateFlow<String?>(null)
+    val currentClipId: StateFlow<String?> = _currentClipId.asStateFlow()
+
+    private val internalListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
+        }
+    }
+
     init {
         controllerFuture.addListener({
-            controller = controllerFuture.get()
+            controller = controllerFuture.get().also { it.addListener(internalListener) }
+            _isPlaying.value = controller?.isPlaying == true
         }, MoreExecutors.directExecutor())
     }
 
@@ -52,6 +71,8 @@ class PlayerController(context: Context) {
         }
         mc.play()
         preparedClipId = null
+        _currentClipId.value = clip.id
+        onPlaybackStart(clip.id)
     }
 
     private fun doSetup(mc: MediaController, clip: Clip) {
@@ -79,6 +100,7 @@ class PlayerController(context: Context) {
     }
 
     fun release() {
+        controller?.removeListener(internalListener)
         controller = null
         MediaController.releaseFuture(controllerFuture)
     }

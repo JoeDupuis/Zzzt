@@ -43,7 +43,12 @@ import io.dupuis.zzzt.data.repository.Clip
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun LibraryScreen(onAddClick: () -> Unit, onClipClick: (String) -> Unit) {
+fun LibraryScreen(
+    onAddClick: () -> Unit,
+    onClipClick: (String) -> Unit,
+    selectMode: Boolean = false,
+    onSelectClip: ((Clip) -> Unit)? = null,
+) {
     val context = LocalContext.current
     val container = (context.applicationContext as ZzztApp).container
     val viewModel: LibraryViewModel = viewModel(factory = LibraryViewModel.factory(container.clipRepository))
@@ -51,7 +56,7 @@ fun LibraryScreen(onAddClick: () -> Unit, onClipClick: (String) -> Unit) {
     var pendingDelete by remember { mutableStateOf<Clip?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Zzzt") }) },
+        topBar = { TopAppBar(title = { Text(if (selectMode) "Choose a clip" else "Zzzt") }) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) { Icon(Icons.Default.Add, contentDescription = "Add clip") }
         },
@@ -72,8 +77,13 @@ fun LibraryScreen(onAddClick: () -> Unit, onClipClick: (String) -> Unit) {
                     ClipCard(
                         clip = clip,
                         onTap = {
-                            container.playerController.prepareClip(clip)
-                            onClipClick(clip.id)
+                            if (selectMode && onSelectClip != null) {
+                                container.playerController.playClip(clip)
+                                onSelectClip(clip)
+                            } else {
+                                container.playerController.prepareClip(clip)
+                                onClipClick(clip.id)
+                            }
                         },
                         onLongPress = { pendingDelete = clip },
                     )

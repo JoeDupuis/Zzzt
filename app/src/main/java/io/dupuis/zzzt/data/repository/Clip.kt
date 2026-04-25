@@ -12,6 +12,7 @@ data class Clip(
     val trimStartMs: Long,
     val trimEndMs: Long,
     val createdAt: Long,
+    val lastPlayedAt: Long? = null,
 )
 
 fun ClipEntity.toDomain(): Clip = Clip(
@@ -24,6 +25,7 @@ fun ClipEntity.toDomain(): Clip = Clip(
     trimStartMs = trimStartMs,
     trimEndMs = trimEndMs,
     createdAt = createdAt,
+    lastPlayedAt = lastPlayedAt,
 )
 
 fun Clip.toEntity(): ClipEntity = ClipEntity(
@@ -36,4 +38,5 @@ fun Clip.toEntity(): ClipEntity = ClipEntity(
     trimStartMs = trimStartMs,
     trimEndMs = trimEndMs,
     createdAt = createdAt,
+    lastPlayedAt = lastPlayedAt,
 )

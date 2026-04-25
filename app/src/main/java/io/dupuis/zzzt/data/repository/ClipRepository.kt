@@ -17,6 +17,10 @@ class ClipRepository(
         .map { list -> list.map { it.toDomain() } }
         .flowOn(Dispatchers.IO)
 
+    fun observeMostRecentlyPlayed(): Flow<Clip?> = dao.observeMostRecentlyPlayed()
+        .map { it?.toDomain() }
+        .flowOn(Dispatchers.IO)
+
     suspend fun getById(id: String): Clip? = withContext(Dispatchers.IO) {
         dao.getById(id)?.toDomain()
     }
@@ -27,6 +31,10 @@ class ClipRepository(
 
     suspend fun update(clip: Clip) = withContext(Dispatchers.IO) {
         dao.update(clip.toEntity())
+    }
+
+    suspend fun markPlayed(id: String, at: Long = System.currentTimeMillis()) = withContext(Dispatchers.IO) {
+        dao.markPlayed(id, at)
     }
 
     suspend fun delete(clip: Clip) = withContext(Dispatchers.IO) {

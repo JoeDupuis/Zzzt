@@ -14,4 +14,5 @@ data class ClipEntity(
     val trimStartMs: Long,
     val trimEndMs: Long,
     val createdAt: Long,
+    val lastPlayedAt: Long? = null,
 )
