@@ -80,6 +80,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.dupuis.zzzt.ZzztApp
 import io.dupuis.zzzt.data.repository.Alarm
 import io.dupuis.zzzt.data.repository.Clip
+import io.dupuis.zzzt.ui.common.rememberNowMs
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -149,6 +150,7 @@ fun BedtimeScreen(
             )
         },
     ) { padding ->
+        val nowMs = rememberNowMs()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -161,6 +163,7 @@ fun BedtimeScreen(
             NextAlarmBanner(
                 triggerMs = state.nextAlarmMs,
                 label = state.nextAlarmLabel,
+                nowMs = nowMs,
                 onClick = {
                     val intent = Intent(AlarmClock.ACTION_SHOW_ALARMS)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -171,6 +174,7 @@ fun BedtimeScreen(
             AgendaCard(
                 dayMs = state.agendaDateMs,
                 events = state.agenda,
+                nowMs = nowMs,
                 hasPermission = state.calendarPermission,
                 onGrant = { calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR) },
                 onOpenFullDay = {
@@ -267,7 +271,7 @@ private fun isFsiGranted(context: Context): Boolean {
 }
 
 @Composable
-private fun NextAlarmBanner(triggerMs: Long?, label: String?, onClick: () -> Unit) {
+internal fun NextAlarmBanner(triggerMs: Long?, label: String?, nowMs: Long, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         color = colors.primaryContainer,
@@ -308,7 +312,7 @@ private fun NextAlarmBanner(triggerMs: Long?, label: String?, onClick: () -> Uni
                     )
                     if (triggerMs != null) {
                         Text(
-                            text = " · in ${formatDelta(triggerMs)}",
+                            text = " · in ${formatDelta(triggerMs, nowMs)}",
                             fontSize = 18.sp,
                             color = colors.onPrimaryContainer.copy(alpha = 0.65f),
                         )
@@ -330,6 +334,7 @@ private fun NextAlarmBanner(triggerMs: Long?, label: String?, onClick: () -> Uni
 private fun AgendaCard(
     dayMs: Long?,
     events: List<io.dupuis.zzzt.data.calendar.AgendaEvent>,
+    nowMs: Long,
     hasPermission: Boolean,
     onGrant: () -> Unit,
     onOpenFullDay: () -> Unit,
@@ -350,7 +355,7 @@ private fun AgendaCard(
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text = agendaTitleFor(dayMs),
+                    text = agendaTitleFor(dayMs, nowMs),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.onSurface,
@@ -689,8 +694,8 @@ private fun formatClockTime(hour: Int, minute: Int): String {
     return "%d:%02d %s".format(h12, minute, ampm)
 }
 
-private fun formatDelta(targetMs: Long): String {
-    val diff = targetMs - System.currentTimeMillis()
+private fun formatDelta(targetMs: Long, nowMs: Long): String {
+    val diff = targetMs - nowMs
     if (diff < 0) return "now"
     val h = diff / 3_600_000
     val m = (diff % 3_600_000) / 60_000
@@ -705,9 +710,9 @@ private fun formatDateShort(ms: Long): String {
     return z.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault()))
 }
 
-private fun agendaTitleFor(ms: Long?): String {
+private fun agendaTitleFor(ms: Long?, nowMs: Long): String {
     if (ms == null) return "Schedule"
-    val today = java.time.LocalDate.now()
+    val today = Instant.ofEpochMilli(nowMs).atZone(ZoneId.systemDefault()).toLocalDate()
     val date = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
     return when (date) {
         today -> "Today"
